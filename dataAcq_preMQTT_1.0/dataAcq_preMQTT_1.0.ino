@@ -1,23 +1,16 @@
 #include <DFRobot_SHT3x.h>
 #include <WiFi.h>        // Include the Wi-Fi library
-#include <ArduinoMqttClient.h>
+#include "TinyMqtt.h"    // https://github.com/hsaturn/TinyMqtt
+#include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
 
-const char* ssid     = "jeefsucksballs";         // The SSID (name) of the Wi-Fi network you want to connect to
-const char* password = "trees12345";     // The password of the Wi-Fi network
+const char* ssid     = "MicroClimate";         // The SSID (name) of the Wi-Fi network you want to connect to
+const char* password = "MicroClimate";     // The password of the Wi-Fi network
 
-WiFiClient wifiClient;
-MqttClient mqttClient(wifiClient);
 
-const char broker[] = "http://0.0.0.0";
-int        port     = 1883;
-const char temp_topic[]  = "temperature";
-const char rh_topic[]  = "rHumidity";
+
 int temp_f;
 int rh;
 
-//set interval for sending messages (milliseconds)
-const long interval = 8000;
-unsigned long previousMillis = 0;
 
 // Construct function. Chip address is 0x44
 DFRobot_SHT3x sht3x(&Wire,/*address=*/0x44,/*RST=*/4);
