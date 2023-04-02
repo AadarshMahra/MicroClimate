@@ -15,14 +15,14 @@ const char DISABLE = 'D';
 unsigned int relay_on[NUM_RELAYS];
 const unsigned int relay_map[NUM_RELAYS] = {22,23,21,19};
 
-const char ssid[] = "MicroClimate";    // AP SSID
-const char pass[] = "MicroClimate";    // AP Password
+const char* ssid = "MicroClimate";
+const char* password = "MicroClimate";
 
-WiFiClient wifiClient;
-MqttClient mqttClient;
 
-const char broker[] = "192.168.1.119";
-int        port     = 1883;
+static MqttClient client;
+
+const char* BROKER = "192.168.1.119";
+const uint16_t BROKER_PORT = 1883;
 const char topic[] = "sensor/temperature";
 const char topic0[]  = "AppControl/Outlet0";
 const char topic1[]  = "AppControl/Outlet1";
@@ -52,11 +52,11 @@ void setup() {
   WiFi.mode(WIFI_STA);
   Serial.print("Attempting to connect to WPA SSID: ");
   Serial.println(ssid);
-  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
-    // failed, retry
-    Serial.print(".");
-    delay(5000);
-  }
+   WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED)
+  { delay(500); Serial << '.'; }
+
 
   Serial.println("You're connected to the network");
   Serial.println();
@@ -69,9 +69,9 @@ void setup() {
   // mqttClient.setUsernamePassword("username", "password");
 
   Serial.print("Attempting to connect to the MQTT broker: ");
-  Serial.println(broker);
+  Serial.println(BROKER);
 
-  mqttClient.connect(broker, port);
+  client.connect(BROKER, BROKER_PORT);
 
   Serial.println("You're connected to the MQTT broker!");
   Serial.println();
@@ -81,8 +81,8 @@ void setup() {
   Serial.println();
 
   // subscribe to a topic
-  mqttClient.setCallback(onPublishTopic);
-  mqttClient.subscribe(topic);
+  //mqttClient.setCallback(onPublishTopic);
+  //mqttClient.subscribe(topic);
 
   // topics can be unsubscribed using:
   // mqttClient.unsubscribe(topic);
@@ -94,14 +94,15 @@ void setup() {
 }
 
 void loop() {
-  mqttClient.loop();
+  client.loop();
+  if (WiFi.status() != WL_CONNECTED) { WiFi.begin(ssid, pass); }
   static auto next_req = millis();
   
   if (millis() > next_req)
   {
     next_req += 1000;
 
-    if (not mqttClient.connected())
+    if (not client.connected())
     {
       Serial << millis() << ": Not connected to broker" << endl;
       return;
