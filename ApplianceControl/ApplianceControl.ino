@@ -2,14 +2,15 @@
 //v1: Read On/Off signal from Serial Monitor (Ex, Dx) from x = 0-3 
 //v2: Connect to broker 
 //v3: Use TinyMQTT to create client
+//v4: Control Relays with MQTT
 
 #include <WiFi.h>
 #include "TinyMqtt.h"    // https://github.com/hsaturn/TinyMqtt
 #include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
 
 const unsigned int NUM_RELAYS = 4;
-const char ENABLE = 'E';
-const char DISABLE = 'D';
+const char* ENABLE = "1";
+const char* DISABLE = "0";
 
 unsigned int relay_on[NUM_RELAYS];
 const unsigned int relay_map[NUM_RELAYS] = {22,23,21,19};
@@ -22,14 +23,42 @@ static MqttClient client;
 
 const char* BROKER = "192.168.1.119";
 const uint16_t BROKER_PORT = 1883;
-std::string topic = "sensor/temperature";
-const char topic0[]  = "AppControl/Outlet0";
-const char topic1[]  = "AppControl/Outlet1";
-const char topic2[]  = "AppControl/Outlet2";
-const char topic3[]  = "AppControl/Outlet3";
+//std::string topic = "sensor/temperature";
+std::string outlet_topics[] = {"AppControl/Outlet0", "AppControl/Outlet1", "AppControl/Outlet2", "AppControl/Outlet3"};
 
-void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */)
-{ Serial << "--> Client received msg on topic " << topic.c_str() << ", " << payload << endl; }
+
+void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
+
+  std::string topic = topic.c_str();
+  Serial << "--> Client received msg on topic " << topic << ", " << payload << endl;
+
+  //Find relay_id
+  unsigned int relay_id;
+
+  for(unsigned int i = 0; i < NUM_RELAYS; ++i){
+    if(strcmp(outlet_topics[i],topic) == 0){
+      relay_id = i;
+      break;
+    }
+  }
+  
+  //Update array
+  if(strcmp(command,ENABLE) == 0){
+    Serial.print("Turning ON Relay ");
+    Serial.println(relay_id);
+      
+    relay_on[relay_id] = 1;
+    digitalWrite(relay_map[relay_id],HIGH);
+  }
+  else if(strcmp(command,DISABLE)== 0){
+    Serial.print("Turning OFF Relay ");
+    Serial.println(relay_id);
+      
+    relay_on[relay_id] = 0;
+    digitalWrite(relay_map[relay_id],LOW);
+  }
+  
+}
 
 void setup() {
   
@@ -85,8 +114,6 @@ void setup() {
   client.setCallback(onPublishTopic);
   client.subscribe(topic);
 
-  // topics can be unsubscribed using:
-  // mqttClient.unsubscribe(topic);
 
   Serial.print("Waiting for messages on topic: ");
   Serial << topic << endl;
@@ -139,13 +166,12 @@ void loop() {
       relay_on[relay_id] = 0;
       digitalWrite(relay_map[relay_id],LOW);
     }
-  }
-  delay(1000);
+  }*/
   for(int i = 0; i < NUM_RELAYS; ++i){
     Serial.print(relay_on[i]);
   }
 
-  Serial.println();*/
+  Serial.println();
     
 
 }
