@@ -3,7 +3,8 @@
 //v2: Connect to broker 
 //v3: Use TinyMQTT to create client
 //v4: Control Relays with MQTT
-
+//c4: TODO: Add publish for status 
+//(possible)TODO: Create a config.h file to create macros for NUM_RELAYS, ENABLE, DISABLE, relay_on, relay_map, ssid, password, broker, broker port, outlet_topics
 #include <WiFi.h>
 #include "TinyMqtt.h"    // https://github.com/hsaturn/TinyMqtt
 #include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
@@ -24,7 +25,7 @@ static MqttClient client;
 const char* BROKER = "192.168.1.119";
 const uint16_t BROKER_PORT = 1883;
 //std::string topic = "sensor/temperature";
-std::string outlet_topics[] = {"AppControl/Outlet0", "AppControl/Outlet1", "AppControl/Outlet2", "AppControl/Outlet3"};
+std::string outlet_topics[NUM_RELAYS] = {"AppControl/Outlet0", "AppControl/Outlet1", "AppControl/Outlet2", "AppControl/Outlet3"};
 
 
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
@@ -135,6 +136,7 @@ void loop() {
       Serial << millis() << ": Not connected to broker" << endl;
       return;
     }
+    //TODO add publish for all topics
     client.publish("", "");
   }
     /*
