@@ -3,7 +3,6 @@
 //v2: Connect to broker 
 //v3: Use TinyMQTT to create client
 
-
 #include <WiFi.h>
 #include "TinyMqtt.h"    // https://github.com/hsaturn/TinyMqtt
 #include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
@@ -23,7 +22,7 @@ static MqttClient client;
 
 const char* BROKER = "192.168.1.119";
 const uint16_t BROKER_PORT = 1883;
-const char topic[] = "sensor/temperature";
+std::string topic = "sensor/temperature";
 const char topic0[]  = "AppControl/Outlet0";
 const char topic1[]  = "AppControl/Outlet1";
 const char topic2[]  = "AppControl/Outlet2";
@@ -43,6 +42,7 @@ void setup() {
   }
 
   //Setup Pins
+  
   pinMode(22,OUTPUT);
   pinMode(23,OUTPUT);
   pinMode(21,OUTPUT);
@@ -50,6 +50,7 @@ void setup() {
 
   // attempt to connect to WiFi network:
   WiFi.mode(WIFI_STA);
+  WiFi.setTxPower(WIFI_POWER_2dBm);
   Serial.print("Attempting to connect to WPA SSID: ");
   Serial.println(ssid);
    WiFi.begin(ssid, password);
@@ -77,25 +78,25 @@ void setup() {
   Serial.println();
 
   Serial.print("Subscribing to topic: ");
-  Serial.println(topic);
+  Serial << topic << endl;
   Serial.println();
 
   // subscribe to a topic
-  //mqttClient.setCallback(onPublishTopic);
-  //mqttClient.subscribe(topic);
+  client.setCallback(onPublishTopic);
+  client.subscribe(topic);
 
   // topics can be unsubscribed using:
   // mqttClient.unsubscribe(topic);
 
   Serial.print("Waiting for messages on topic: ");
-  Serial.println(topic);
+  Serial << topic << endl;
   Serial.println();
   
 }
 
 void loop() {
   client.loop();
-  if (WiFi.status() != WL_CONNECTED) { WiFi.begin(ssid, pass); }
+  if (WiFi.status() != WL_CONNECTED) { WiFi.begin(ssid, password); }
   static auto next_req = millis();
   
   if (millis() > next_req)
@@ -107,6 +108,7 @@ void loop() {
       Serial << millis() << ": Not connected to broker" << endl;
       return;
     }
+    client.publish("", "");
   }
     /*
   //Get Command if there is one (all commands are 2 bytes long: E(nable)/D(isable) and x)
