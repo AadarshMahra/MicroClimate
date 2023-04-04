@@ -3,7 +3,7 @@
 //v2: Connect to broker 
 //v3: Use TinyMQTT to create client
 //v4: Control Relays with MQTT
-//c4: TODO: Add publish for status 
+//v4: Code is Done, Need to test with Relays now
 //(possible)TODO: Create a config.h file to create macros for NUM_RELAYS, ENABLE, DISABLE, relay_on, relay_map, ssid, password, broker, broker port, outlet_topics
 #include <WiFi.h>
 #include "TinyMqtt.h"    // https://github.com/hsaturn/TinyMqtt
