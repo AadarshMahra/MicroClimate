@@ -25,38 +25,41 @@ static MqttClient client;
 const char* BROKER = "192.168.1.119";
 const uint16_t BROKER_PORT = 1883;
 //std::string topic = "sensor/temperature";
-std::string outlet_topics[NUM_RELAYS] = {"AppControl/Outlet0", "AppControl/Outlet1", "AppControl/Outlet2", "AppControl/Outlet3"};
-
+const char* outlet_topics[NUM_RELAYS] = {"AppControl/Outlet0/control", "AppControl/Outlet1/control", "AppControl/Outlet2/control", "AppControl/Outlet3/control"};
+const char* outlet_status[NUM_RELAYS] = {"AppControl/Outlet0/status", "AppControl/Outlet1/status", "AppControl/Outlet2/status", "AppControl/Outlet3/status"};
 
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
 
-  std::string topic = topic.c_str();
-  Serial << "--> Client received msg on topic " << topic << ", " << payload << endl;
+  const char* topic_str = topic.c_str();
+  Serial << "--> Client received msg on topic " << topic_str << ", " << payload << endl;
 
   //Find relay_id
   unsigned int relay_id;
 
   for(unsigned int i = 0; i < NUM_RELAYS; ++i){
-    if(strcmp(outlet_topics[i],topic) == 0){
+    if(strcmp(outlet_topics[i],topic_str) == 0){
       relay_id = i;
       break;
     }
   }
   
   //Update array
-  if(strcmp(command,ENABLE) == 0){
+  if(strcmp(payload,ENABLE) == 0){
     Serial.print("Turning ON Relay ");
     Serial.println(relay_id);
       
     relay_on[relay_id] = 1;
     digitalWrite(relay_map[relay_id],HIGH);
   }
-  else if(strcmp(command,DISABLE)== 0){
+  else if(strcmp(payload,DISABLE)== 0){
     Serial.print("Turning OFF Relay ");
     Serial.println(relay_id);
       
     relay_on[relay_id] = 0;
     digitalWrite(relay_map[relay_id],LOW);
+  }
+  else {
+    Serial << "Unknown payload: " << payload << endl;
   }
   
 }
@@ -107,19 +110,22 @@ void setup() {
   Serial.println("You're connected to the MQTT broker!");
   Serial.println();
 
-  Serial.print("Subscribing to topic: ");
-  Serial << topic << endl;
-  Serial.println();
+  for(int i = 0; i < NUM_RELAYS; i++){
+    const char* topic = outlet_topics[i];
+    Serial.print("Subscribing to topic: ");
+    Serial << topic << endl;
+    Serial.println();
 
-  // subscribe to a topic
-  client.setCallback(onPublishTopic);
-  client.subscribe(topic);
+    // subscribe to a topic
+    client.setCallback(onPublishTopic);
+    client.subscribe(topic);
+
+    Serial.print("Waiting for messages on topic: ");
+    Serial << topic << endl;
+    Serial.println();
+  }
 
 
-  Serial.print("Waiting for messages on topic: ");
-  Serial << topic << endl;
-  Serial.println();
-  
 }
 
 void loop() {
@@ -136,8 +142,13 @@ void loop() {
       Serial << millis() << ": Not connected to broker" << endl;
       return;
     }
-    //TODO add publish for all topics
-    client.publish("", "");
+
+    //Sends a publish for all outlets and their status
+    for(int i = 0; i < NUM_RELAYS; i++){
+      char* relay_status;
+      (relay_on[i] == 1) ? relay_status = "On" : relay_status = "Off";
+      client.publish(outlet_status[i], relay_status);
+    }
   }
     /*
   //Get Command if there is one (all commands are 2 bytes long: E(nable)/D(isable) and x)
