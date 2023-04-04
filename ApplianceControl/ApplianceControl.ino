@@ -4,7 +4,7 @@
 //v3: Use TinyMQTT to create client
 //v4: Control Relays with MQTT
 //v4: Code is Done, Need to test with Relays now
-//(possible)TODO: Create a config.h file to create macros for NUM_RELAYS, ENABLE, DISABLE, relay_on, relay_map, ssid, password, broker, broker port, outlet_topics
+
 
 //Enter config variables here
 #include "config.h" 
