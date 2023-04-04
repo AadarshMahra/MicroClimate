@@ -5,28 +5,10 @@
 //v4: Control Relays with MQTT
 //v4: Code is Done, Need to test with Relays now
 //(possible)TODO: Create a config.h file to create macros for NUM_RELAYS, ENABLE, DISABLE, relay_on, relay_map, ssid, password, broker, broker port, outlet_topics
-#include <WiFi.h>
-#include "TinyMqtt.h"    // https://github.com/hsaturn/TinyMqtt
-#include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
 
-const unsigned int NUM_RELAYS = 4;
-const char* ENABLE = "On";
-const char* DISABLE = "Off";
+//Enter config variables here
+#include "config.h" 
 
-unsigned int relay_on[NUM_RELAYS];
-const unsigned int relay_map[NUM_RELAYS] = {22,23,21,19};
-
-const char* ssid = "MicroClimate";
-const char* password = "MicroClimate";
-
-
-static MqttClient client;
-
-const char* BROKER = "192.168.1.119";
-const uint16_t BROKER_PORT = 1883;
-//std::string topic = "sensor/temperature";
-const char* outlet_topics[NUM_RELAYS] = {"AppControl/Outlet0/control", "AppControl/Outlet1/control", "AppControl/Outlet2/control", "AppControl/Outlet3/control"};
-const char* outlet_status[NUM_RELAYS] = {"AppControl/Outlet0/status", "AppControl/Outlet1/status", "AppControl/Outlet2/status", "AppControl/Outlet3/status"};
 
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
 
@@ -49,14 +31,14 @@ void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char
     Serial.println(relay_id);
       
     relay_on[relay_id] = 1;
-    digitalWrite(relay_map[relay_id],HIGH);
+    digitalWrite(relay_gpio[relay_id],HIGH);
   }
   else if(strcmp(payload,DISABLE)== 0){
     Serial.print("Turning OFF Relay ");
     Serial.println(relay_id);
       
     relay_on[relay_id] = 0;
-    digitalWrite(relay_map[relay_id],LOW);
+    digitalWrite(relay_gpio[relay_id],LOW);
   }
   else {
     Serial << "Unknown payload: " << payload << endl;
@@ -146,7 +128,7 @@ void loop() {
     //Sends a publish for all outlets and their status
     for(int i = 0; i < NUM_RELAYS; i++){
       char* relay_status;
-      (relay_on[i] == 1) ? relay_status = "On" : relay_status = "Off";
+      (relay_on[i] == 1) ? relay_status = ENABLE : relay_status = DISABLE;
       client.publish(outlet_status[i], relay_status);
     }
   }
