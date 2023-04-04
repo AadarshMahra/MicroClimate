@@ -10,8 +10,8 @@
 #include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
 
 const unsigned int NUM_RELAYS = 4;
-const char* ENABLE = "1";
-const char* DISABLE = "0";
+const char* ENABLE = "On";
+const char* DISABLE = "Off";
 
 unsigned int relay_on[NUM_RELAYS];
 const unsigned int relay_map[NUM_RELAYS] = {22,23,21,19};
