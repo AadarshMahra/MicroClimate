@@ -58,10 +58,9 @@ void setup() {
 
   //Setup Pins
   
-  pinMode(22,OUTPUT);
-  pinMode(23,OUTPUT);
-  pinMode(21,OUTPUT);
-  pinMode(19,OUTPUT);
+  for(int i = 0; i < NUM_RELAYS; ++i){
+    pinMode(relay_gpio[i],OUTPUT);
+  }
 
   // attempt to connect to WiFi network:
   WiFi.mode(WIFI_STA);
