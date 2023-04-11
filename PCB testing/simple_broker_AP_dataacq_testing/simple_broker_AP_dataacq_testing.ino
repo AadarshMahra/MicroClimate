@@ -30,12 +30,17 @@ uint16_t httpPort = 80;
 WiFiServer server(httpPort);
 WiFiClient httpClient;
 MqttClient mqtt_a(&broker);
-const char* topic_to_use = "sensor/temperature";
+const char* sensor1 = "data_acq/node0/temp";
+const char* sensor2 = "data_acq/node0/rh";
+
+
+
+
 
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
 
   const char* topic_str = topic.c_str();
-  Serial << "--> Client received msg on topic " << topic_str << ", " << payload << endl;
+  Serial << "~~~~~~~~~~~> Client received msg on topic " << topic_str << ", " << payload << endl;
 }
 
 void setup() {
@@ -59,11 +64,32 @@ void setup() {
   broker.begin();
   Console << "Broker ready : " << WiFi.localIP() << " on port " << PORT << endl;
 
+  /* subscribe to data acq. topic */
   mqtt_a.setCallback(onPublishTopic);
-  mqtt_a.subscribe(topic_to_use);
+  mqtt_a.subscribe(sensor1);
+  mqtt_a.subscribe(sensor2);
+
+  
 }
 
 void loop() {
   broker.loop();
   mqtt_a.loop();
+
+    static auto next_send = millis();
+    if (millis() > next_send)
+    {
+        next_send += 5000;
+
+        if (not mqtt_a.connected())
+        {
+            Serial << millis() << ": Not connected to broker" << endl;
+            return;
+        }
+
+        Serial << "~~~~~~~~~~~> Publishing a data_acq/node0/shutdown value: " << endl;
+        mqtt_a.publish("data_acq/node0/shutdown", "no");
+        //mqtt_a.publish("data_acq/node0/shutdown", "no 2");
+    }
+  
 }
