@@ -78,6 +78,7 @@ void loop() {
 
 		Serial << "--> Publishing a new sensor/temperature value: " << temp_f << endl;
 		client.publish("sensor/temperature", String(temp_f));
+
   }
   // Serial.print("Sending message to topic: ");
   // Serial.println(temp_topic);
