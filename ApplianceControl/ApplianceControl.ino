@@ -51,6 +51,7 @@ void setup() {
   //Set up serial
   Serial.begin(115200);
 
+  client.id("appControl");
   //Clear Relay On Array
   for(int i = 0; i < NUM_RELAYS; ++i){
     relay_on[NUM_RELAYS] = 0;
@@ -64,7 +65,6 @@ void setup() {
 
   // attempt to connect to WiFi network:
   WiFi.mode(WIFI_STA);
-  WiFi.setTxPower(WIFI_POWER_2dBm);
   Serial.print("Attempting to connect to WPA SSID: ");
   Serial.println(ssid);
    WiFi.begin(ssid, password);
@@ -80,7 +80,6 @@ void setup() {
   Serial.println(BROKER);
 
   client.connect(BROKER, BROKER_PORT);
-
   Serial.println("You're connected to the MQTT broker!");
   Serial.println();
 
@@ -104,16 +103,21 @@ void setup() {
 
 void loop() {
   client.loop();
+  //publishClient.loop();
   if (WiFi.status() != WL_CONNECTED) { WiFi.begin(ssid, password); }
   static auto next_req = millis();
   
   if (millis() > next_req)
   {
-    next_req += 1000;
+    next_req += 5000;
 
     if (not client.connected())
     {
-      Serial << millis() << ": Not connected to broker" << endl;
+      Serial << millis() << ": Not connected to broker from client subscribeClient" << endl;
+      //Turns off all relays if the broker gets disconnected
+      for(int i = 0; i < NUM_RELAYS; ++i){
+        relay_on[NUM_RELAYS] = 0;
+      }
       return;
     }
 
@@ -122,13 +126,15 @@ void loop() {
       char* relay_status;
       (relay_on[i] == 1) ? relay_status = ENABLE : relay_status = DISABLE;
       client.publish(outlet_status[i], relay_status);
+      Serial.println(relay_status);
     }
   }
+  /*
   for(int i = 0; i < NUM_RELAYS; ++i){
     Serial.print(relay_on[i]);
   }
-
-  Serial.println();
+  */
+  //Serial.println();
     
 
 }
