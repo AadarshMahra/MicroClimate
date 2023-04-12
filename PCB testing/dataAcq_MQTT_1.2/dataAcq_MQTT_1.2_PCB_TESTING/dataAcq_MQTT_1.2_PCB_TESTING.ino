@@ -18,7 +18,6 @@ int fail_init_flag;
 
 static MqttClient client;
 
-
 // Construct function. Chip address is 0x44
 // DFRobot_SHT3x sht3x(&Wire,/*address=*/0x44,/*RST=*/4);
 
@@ -99,8 +98,8 @@ void loop() {
     // }
 
 		Serial << "--> Publishing a new sensor/temperature value: " << temp_f << endl;
-		client.publish("data_acq/node0/temp", "69");
-    client.publish("data_acq/node0/rh", "420");
+		client.publish("data_acq/node0/temp", "65");
+    client.publish("data_acq/node0/rh", "40");
 
   }
 }
