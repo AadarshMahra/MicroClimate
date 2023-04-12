@@ -3,7 +3,6 @@
 #include <Wire.h>          // Include I2C ESP32 Library
 #include "TinyMqtt.h"      // https://github.com/hsaturn/TinyMqtt
 #include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
-#include <avr/wdt.h>
 
 // v ADD TO CONFIG v
 #define UPDATE_INTERVAL 5000
@@ -34,12 +33,6 @@ void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char
   Serial << "--> Client received msg on topic " << topic_str << ", " << payload << endl;
   
   //TODO: add shutdown
-}
-
-void reboot() {
- wdt_disable();
- wdt_enable(WDTO_15MS);
- while (1) {}
 }
 
 void setup() {
@@ -105,12 +98,12 @@ void loop() {
 		if (not client.connected())
 		{
 			Serial << millis() << ": Not connected to broker" << endl;
-      reboot();      
+      // TODO: add reboot   
 			return;
 		}
 
     // send sensor fail data to MQTT broker  
-    if (flag != 1) {
+    if (fail_init_flag != 1) {
       client.publish("sensor/temperature", "sensor init fail");
     }
 
