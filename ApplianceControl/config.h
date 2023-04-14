@@ -22,3 +22,5 @@ const uint16_t BROKER_PORT = 1883;
 //std::string topic = "sensor/temperature";
 const char* outlet_topics[NUM_RELAYS] = {"app_control/outlet0/control", "app_control/outlet1/control"};
 const char* outlet_status[NUM_RELAYS] = {"app_control/outlet0/status", "app_control/outlet1/status"};
+
+
