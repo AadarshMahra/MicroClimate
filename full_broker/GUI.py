@@ -1,5 +1,25 @@
 import tkinter as tk
+import paho.mqtt.client as mqtt
 
+# definitions
+broker_address, broker_port = "192.168.1.119", 1883
+
+RPI_topics= ["RPI/thresholds/temp", "RPI/thresholds/rh"]
+
+sensor_data_topics = ["data_acq/node0/temp", "data_acq/node0/rh",
+                      "data_acq/node1/temp", "data_acq/node1/rh" ]
+current_temp, current_humidity = 0.0,0.0
+
+def on_message(client, userdata, message):
+    print("Received message on topic {}: {}".format(message.topic, str(message.payload)))
+    if message.topic == sensor_data_topics[0]:
+        current_temp = message.payload
+        self.current_temp_label.config(text="Current Temperature: {:.1f}°C".format(current_temp))
+            
+    elif message.topic == sensor_data_topics[1]:
+        current_humidity = message.payload
+        self.current_humidity_label.config(text="Current Humidity: {:.1f}%".format(current_humidity))
+    
 class App:
     def __init__(self, master):
         self.master = master
@@ -24,32 +44,44 @@ class App:
         self.current_humidity_label.pack()
         
         # Create button to update current temperature and humidity values
-        self.update_button = tk.Button(master, text="Update", command=self.update_values)
+        self.update_button = tk.Button(master, text="Update", command=self.update_values_to_mc)
         self.update_button.pack()
         
         # Create button to exit program
         self.exit_button = tk.Button(master, text="Exit", command=master.quit)
         self.exit_button.pack()
     
-    def update_values(self):
-        # Get current temperature and humidity values (replace with actual values from sensors)
-        current_temp = 25.0
-        current_humidity = 50.0
+    def update_values_to_mc(self):
+        # create connection and publish inputs to topics
+        try: 
+            client.connect(broker_address, broker_port)
+        except Exception as e:
+            print(e)
         
-        # Update current temperature and humidity labels
-        self.current_temp_label.config(text="Current Temperature: {:.1f}°C".format(current_temp))
-        self.current_humidity_label.config(text="Current Humidity: {:.1f}%".format(current_humidity))
+        print("Changing Requested Temperature Threshold")
+        client.publish(RPI_topics[0], self.temp_threshold_entry.get())
+        print("Changing Requested Humidity Threshold")
+        client.publish(RPI_topics[1], self.humidity_threshold_entry.get())
+    
         
-        # Check if temperature and/or humidity are above threshold values
-        temp_threshold = float(self.temp_threshold_entry.get())
-        humidity_threshold = float(self.humidity_threshold_entry.get())
         
-        if current_temp > temp_threshold:
-            print("Temperature above threshold!")
-        
-        if current_humidity > humidity_threshold:
-            print("Humidity above threshold!")
 
+# create GUI
 root = tk.Tk()
 app = App(root)
+        
+# declare an MQTT client 
+client = mqtt.Client()
+client.on_message = on_message
+
+ # create connection and subscribe to topics
+try: 
+    client.connect(broker_address, broker_port)
+except Exception as e:
+    print(e)
+# subscribe to sensor topics 
+client.subscribe(sensor_data_topics[0])
+client.subscribe(sensor_data_topics[1])
+
+client.loop_start()
 root.mainloop()
