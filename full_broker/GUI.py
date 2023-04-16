@@ -12,11 +12,6 @@ current_temp, current_humidity = 0.0,0.0
 
 def update_values_to_mc():
     # create connection and publish inputs to topics
-    try: 
-        client.connect(broker_address, broker_port)
-    except Exception as e:
-        print(e)
-    
     print("Changing Requested Temperature Threshold")
     client.publish(RPI_topics[0], temp_threshold_entry.get())
     print("Changing Requested Humidity Threshold")
@@ -57,18 +52,14 @@ def on_message(client, userdata, message):
     print("Received message on topic {}: {}".format(message.topic, str(message.payload)))
     if message.topic == sensor_data_topics[0]:
         current_temp = message.payload
-        current_temp_label.config(text="Current Temperature: {:.1f}°C".format(current_temp))
+        current_temp_label.config(text="Current Temperature: {}°C".format(float(current_temp)))
             
     elif message.topic == sensor_data_topics[1]:
         current_humidity = message.payload
-        current_humidity_label.config(text="Current Humidity: {:.1f}%".format(current_humidity))
+        current_humidity_label.config(text="Current Humidity: {}%".format(float(current_humidity)))
     
 
         
-
-# create GUI
-root = tk.Tk()
-
         
 # declare an MQTT client 
 client = mqtt.Client()
@@ -82,6 +73,6 @@ except Exception as e:
 # subscribe to sensor topics 
 client.subscribe(sensor_data_topics[0])
 client.subscribe(sensor_data_topics[1])
-
 client.loop_start()
-root.mainloop()
+
+master.mainloop()
