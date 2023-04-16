@@ -5,8 +5,7 @@
 #include "Instruction.h"
 
 #define PORT 1883
-#define TEMP_TARGET 72
-#define HUM_TARGET 60
+
 #define TEMP_VARIANCE 3
 #define HUM_VARIANCE 3
 MqttBroker broker(PORT);
@@ -40,14 +39,18 @@ char* sensor0_topic = "data_acq/node0/temp";
 char* sensor1_topic = "data_acq/node0/rh";
 char* control0_topic = "app_control/outlet0/control"; 
 char* control1_topic = "app_control/outlet1/control"; 
+char* RPI_temp_topic = "RPI/targets/temp";
+char* RPI_rh_topic = "RPI/targets/rh";
+
+volatile float TEMP_TARGET = 0.0;
+volatile float HUM_TARGET = 0.0;
 volatile float sensor0_reading = 0.0;  
 volatile float sensor1_reading = 0.0;
-
-
 
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
   const char* topic_str = topic.c_str();
   Serial << "~~~~~~~~~~~> Client received msg on topic " << topic_str << ", " << payload << endl;
+  //Change to case?
   if (strcmp(topic_str, sensor0_topic) == 0)
     {
       sensor0_reading = atof(payload); 
@@ -56,6 +59,14 @@ void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char
     {
       sensor1_reading = atof(payload); 
     }
+   if (strcmp(topic_str, RPI_temp_topic) == 0)
+   {
+    TEMP_TARGET = atof(payload);
+   }
+   if (strcmp(topic_str, RPI_rh_topic) == 0)
+   {
+    HUM_TARGET = atof(payload);
+   }
 }
 
 void setup() {
@@ -83,6 +94,8 @@ void setup() {
   mqtt_a.setCallback(onPublishTopic);
   mqtt_a.subscribe(sensor0_topic);
   mqtt_a.subscribe(sensor1_topic);
+  mqtt_a.subscribe(RPI_temp_topic);
+  mqtt_a.subscribe(RPI_rh_topic);
 
 }
 
@@ -109,7 +122,7 @@ void loop() {
 
         Serial << sensor0_reading << endl; 
         Serial << sensor1_reading << endl; 
-        
+
         /* compute control systems algorithm */
         instruction curr_inst = compute_inst(sensor0_reading, sensor1_reading, TEMP_TARGET, HUM_TARGET, TEMP_VARIANCE, HUM_VARIANCE); 
         /* TODO: publish control instructions to PWR/APP CTRL*/
@@ -122,5 +135,4 @@ void loop() {
         mqtt_a.publish(control1_topic, curr_inst.humidifier_instruction); 
         
     }
-  
 }
