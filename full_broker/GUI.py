@@ -4,7 +4,7 @@ import paho.mqtt.client as mqtt
 # definitions
 broker_address, broker_port = "192.168.1.119", 1883
 
-RPI_topics= ["RPI/thresholds/temp", "RPI/thresholds/rh"]
+RPI_topics= ["RPI/targets/temp", "RPI/targets/rh"]
 
 sensor_data_topics = ["data_acq/node0/temp", "data_acq/node0/rh",
                       "data_acq/node1/temp", "data_acq/node1/rh" ]
@@ -12,26 +12,26 @@ current_temp, current_humidity = 0.0,0.0
 
 def update_values_to_mc():
     # create connection and publish inputs to topics
-    print("Changing Requested Temperature Threshold")
-    client.publish(RPI_topics[0], temp_threshold_entry.get())
-    print("Changing Requested Humidity Threshold")
-    client.publish(RPI_topics[1], humidity_threshold_entry.get())
+    print("Changing Requested Temperature Target")
+    client.publish(RPI_topics[0], temp_target_entry.get())
+    print("Changing Requested Humidity Target")
+    client.publish(RPI_topics[1], humidity_target_entry.get())
 
 # Create the tkinter window
 master = tk.Tk()
 master.title("Temperature and Humidity Monitor")
 
-# Create temperature threshold label and entry widget
-temp_threshold_label = tk.Label(master, text="Temperature Threshold:")
-temp_threshold_label.pack()
-temp_threshold_entry = tk.Entry(master)
-temp_threshold_entry.pack()
+# Create temperature target label and entry widget
+temp_target_label = tk.Label(master, text="Temperature Target:")
+temp_target_label.pack()
+temp_target_entry = tk.Entry(master)
+temp_target_entry.pack()
 
-# Create humidity threshold label and entry widget
-humidity_threshold_label = tk.Label(master, text="Humidity Threshold:")
-humidity_threshold_label.pack()
-humidity_threshold_entry = tk.Entry(master)
-humidity_threshold_entry.pack()
+# Create humidity target label and entry widget
+humidity_target_label = tk.Label(master, text="Humidity Target:")
+humidity_target_label.pack()
+humidity_target_entry = tk.Entry(master)
+humidity_target_entry.pack()
 
 # Create current temperature and humidity labels
 current_temp_label = tk.Label(master, text="Current Temperature: ")
