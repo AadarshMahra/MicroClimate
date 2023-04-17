@@ -18,7 +18,7 @@ void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char
   //Find relay_id
   unsigned int relay_id;
 
-  for(unsigned int i = 0; i < NUM_RELAYS; ++i){
+  for(unsigned int i = 0; i < NUM_RELAYS; i++){
     if(strcmp(outlet_topics[i],topic_str) == 0){
       relay_id = i;
       break;
@@ -53,13 +53,13 @@ void setup() {
 
   client.id("appControl");
   //Clear Relay On Array
-  for(int i = 0; i < NUM_RELAYS; ++i){
-    relay_on[NUM_RELAYS] = 0;
+  for(int i = 0; i < NUM_RELAYS; i++){
+    relay_on[i] = 0;
   }
 
   //Setup Pins
   
-  for(int i = 0; i < NUM_RELAYS; ++i){
+  for(int i = 0; i < NUM_RELAYS; i++){
     pinMode(relay_gpio[i],OUTPUT);
   }
 
@@ -82,15 +82,17 @@ void setup() {
   client.connect(BROKER, BROKER_PORT);
   Serial.println("You're connected to the MQTT broker!");
   Serial.println();
-
+  
+  
+  client.setCallback(onPublishTopic);  
+  // subscribe to topics
   for(int i = 0; i < NUM_RELAYS; i++){
     const char* topic = outlet_topics[i];
     Serial.print("Subscribing to topic: ");
     Serial << topic << endl;
     Serial.println();
 
-    // subscribe to a topic
-    client.setCallback(onPublishTopic);
+
     client.subscribe(topic);
 
     Serial.print("Waiting for messages on topic: ");
@@ -104,21 +106,21 @@ void setup() {
 void loop() {
   client.loop();
   //publishClient.loop();
-  if (WiFi.status() != WL_CONNECTED) { WiFi.begin(ssid, password); }
+  
   static auto next_req = millis();
   
   if (millis() > next_req)
   {
     next_req += 5000;
-
+    if (WiFi.status() != WL_CONNECTED) { WiFi.begin(ssid, password); }
     if (not client.connected())
     {
       Serial << millis() << ": Not connected to broker from client subscribeClient" << endl;
       //Turns off all relays if the broker gets disconnected
-      for(int i = 0; i < NUM_RELAYS; ++i){
-        relay_on[NUM_RELAYS] = 0;
+      for(int i = 0; i < NUM_RELAYS; i++){
+        relay_on[i] = 0;
       }
-      return;
+      client.connect(BROKER, BROKER_PORT);
     }
 
     //Sends a publish for all outlets and their status
