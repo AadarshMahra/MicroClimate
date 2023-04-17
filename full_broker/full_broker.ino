@@ -10,21 +10,6 @@
 #define HUM_VARIANCE 3
 MqttBroker broker(PORT);
 
-/** Basic Mqtt Broker
-  *
-  *  +-----------------------------+
-  *  | ESP                         |
-  *  |       +--------+            |
-  *  |       | broker |            | 1883 <--- External client/s
-  *  |       +--------+            |
-  *  |                             |
-  *  +-----------------------------+
-  *
-  *  Your ESP will become a MqttBroker.
-	*  You can test it with any client such as mqtt-spy for example
-	*
-  */
-
 const char* ssid = "MicroClimate";
 const char* password = "MicroClimate";
 IPAddress local_IP(192, 168, 1, 119);
@@ -44,9 +29,9 @@ char* RPI_rh_topic = "RPI/targets/rh";
 
 volatile float TEMP_TARGET = 0.0;
 volatile float HUM_TARGET = 0.0;
-volatile float sensor0_reading = 0.0;  
-volatile float sensor1_reading = 0.0;
-
+volatile float sensor0_reading = 90.0;  
+volatile float sensor1_reading = 90.0;
+volatile float change = .5;
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
   const char* topic_str = topic.c_str();
   Serial << "~~~~~~~~~~~> Client received msg on topic " << topic_str << ", " << payload << endl;
@@ -122,7 +107,14 @@ void loop() {
 
         Serial << sensor0_reading << endl; 
         Serial << sensor1_reading << endl; 
-
+        /* fake sensor data */ 
+        /*
+        sensor0_reading += change;
+        sensor1_reading += change;
+        if(sensor0_reading == 100.0 || sensor1_reading == 100.0 || sensor0_reading == 90.0 || sensor1_reading == 90.0)
+          change = change * -1;
+        */ 
+        
         /* compute control systems algorithm */
         instruction curr_inst = compute_inst(sensor0_reading, sensor1_reading, TEMP_TARGET, HUM_TARGET, TEMP_VARIANCE, HUM_VARIANCE); 
         /* TODO: publish control instructions to PWR/APP CTRL*/
@@ -133,6 +125,8 @@ void loop() {
         
         mqtt_a.publish(control0_topic, curr_inst.heater_instruction); 
         mqtt_a.publish(control1_topic, curr_inst.humidifier_instruction); 
+        mqtt_a.publish(sensor0_topic, String(sensor0_reading));
+        mqtt_a.publish(sensor1_topic, String(sensor1_reading));
         
     }
 }
