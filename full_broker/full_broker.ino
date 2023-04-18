@@ -6,7 +6,7 @@
 
 #define PORT 1883
 
-#define TEMP_VARIANCE 3
+#define TEMP_VARIANCE 1
 #define HUM_VARIANCE 3
 MqttBroker broker(PORT);
 
@@ -91,7 +91,7 @@ void loop() {
     static auto next_send = millis();
     if (millis() > next_send)
     {
-        next_send += 5000;
+        next_send += 10000;
 
         if (not mqtt_a.connected())
         {
@@ -99,10 +99,10 @@ void loop() {
             return;
         }
 
-        Serial << "~~~~~~~~~~~> Publishing a data_acq/node0/shutdown value: " << endl;
         
         /* publish shutdown instructions for DATA_ACQ */
-        mqtt_a.publish("data_acq/node0/shutdown", "no");
+        //Serial << "~~~~~~~~~~~> Publishing a data_acq/node0/shutdown value: " << endl;
+        //mqtt_a.publish("data_acq/node0/shutdown", "no");
         //mqtt_a.publish("data_acq/node0/shutdown", "no 2");
 
         Serial << sensor0_reading << endl; 
@@ -117,16 +117,13 @@ void loop() {
         
         /* compute control systems algorithm */
         instruction curr_inst = compute_inst(sensor0_reading, sensor1_reading, TEMP_TARGET, HUM_TARGET, TEMP_VARIANCE, HUM_VARIANCE); 
-        /* TODO: publish control instructions to PWR/APP CTRL*/
-
-        Serial << "^^xxxxx^^" << endl; 
-        Serial << curr_inst.heater_instruction << endl; 
-        Serial << curr_inst.humidifier_instruction << endl; 
-        
+        /* publish control instructions to PWR/APP CTRL*/
         mqtt_a.publish(control0_topic, curr_inst.heater_instruction); 
         mqtt_a.publish(control1_topic, curr_inst.humidifier_instruction); 
-        mqtt_a.publish(sensor0_topic, String(sensor0_reading));
-        mqtt_a.publish(sensor1_topic, String(sensor1_reading));
+        
+        /* publish FAKE sensor data to RPI */ 
+        //mqtt_a.publish(sensor0_topic, String(sensor0_reading));
+        //mqtt_a.publish(sensor1_topic, String(sensor1_reading));
         
     }
 }
