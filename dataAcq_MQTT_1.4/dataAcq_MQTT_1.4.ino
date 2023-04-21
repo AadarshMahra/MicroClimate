@@ -5,16 +5,19 @@
 #include "TinyStreaming.h" // https://github.com/hsaturn/TinyConsole
 
 // v ADD TO CONFIG v
-#define UPDATE_INTERVAL 5000
+#define UPDATE_INTERVAL 10000
 const char* ssid     = "MicroClimate";     // The SSID (name) of the Wi-Fi network you want to connect to
 const char* password = "MicroClimate";     // The password of the Wi-Fi network
 const char* BROKER = "192.168.1.119";      // static IP of broker host.
 const uint16_t BROKER_PORT = 1883;       
 // ^ ADD TO CONFIG ^
-
+   
 // pins for I2C signals, different than ESP32 default
-#define I2C_SDA 40
-#define I2C_SCL 42
+// #define I2C_SDA 40
+// #define I2C_SCL 42
+#define I2C_SDA 23
+#define I2C_SCL 22
+
 
 // Sensor-set values
 float temp_f;
@@ -63,6 +66,7 @@ void setup() {
   Serial << "Connected to " << ssid << "IP address: " << WiFi.localIP() << endl;
 
   // connect MQTT client to broker and setup subscription
+  client.id("dataAcq0");
 	client.connect(BROKER, BROKER_PORT);
   client.setCallback(onPublishTopic);
   client.subscribe("data_acq/node0/shutdown");
@@ -98,7 +102,7 @@ void loop() {
 		if (not client.connected())
 		{
 			Serial << millis() << ": Not connected to broker" << endl;
-      // TODO: add reboot   
+      client.connect(BROKER, BROKER_PORT);
 			return;
 		}
 
