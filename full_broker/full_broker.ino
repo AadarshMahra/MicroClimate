@@ -6,24 +6,9 @@
 
 #define PORT 1883
 
-#define TEMP_VARIANCE 3
+#define TEMP_VARIANCE 1
 #define HUM_VARIANCE 3
 MqttBroker broker(PORT);
-
-/** Basic Mqtt Broker
-  *
-  *  +-----------------------------+
-  *  | ESP                         |
-  *  |       +--------+            |
-  *  |       | broker |            | 1883 <--- External client/s
-  *  |       +--------+            |
-  *  |                             |
-  *  +-----------------------------+
-  *
-  *  Your ESP will become a MqttBroker.
-	*  You can test it with any client such as mqtt-spy for example
-	*
-  */
 
 const char* ssid = "MicroClimate";
 const char* password = "MicroClimate";
@@ -44,9 +29,9 @@ char* RPI_rh_topic = "RPI/targets/rh";
 
 volatile float TEMP_TARGET = 0.0;
 volatile float HUM_TARGET = 0.0;
-volatile float sensor0_reading = 0.0;  
-volatile float sensor1_reading = 0.0;
-
+volatile float sensor0_reading = 90.0;  
+volatile float sensor1_reading = 90.0;
+volatile float change = .5;
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
   const char* topic_str = topic.c_str();
   Serial << "~~~~~~~~~~~> Client received msg on topic " << topic_str << ", " << payload << endl;
@@ -106,7 +91,7 @@ void loop() {
     static auto next_send = millis();
     if (millis() > next_send)
     {
-        next_send += 5000;
+        next_send += 10000;
 
         if (not mqtt_a.connected())
         {
@@ -114,25 +99,31 @@ void loop() {
             return;
         }
 
-        Serial << "~~~~~~~~~~~> Publishing a data_acq/node0/shutdown value: " << endl;
         
         /* publish shutdown instructions for DATA_ACQ */
-        mqtt_a.publish("data_acq/node0/shutdown", "no");
+        //Serial << "~~~~~~~~~~~> Publishing a data_acq/node0/shutdown value: " << endl;
+        //mqtt_a.publish("data_acq/node0/shutdown", "no");
         //mqtt_a.publish("data_acq/node0/shutdown", "no 2");
 
         Serial << sensor0_reading << endl; 
         Serial << sensor1_reading << endl; 
-
+        /* fake sensor data */ 
+        /*
+        sensor0_reading += change;
+        sensor1_reading += change;
+        if(sensor0_reading == 100.0 || sensor1_reading == 100.0 || sensor0_reading == 90.0 || sensor1_reading == 90.0)
+          change = change * -1;
+        */ 
+        
         /* compute control systems algorithm */
         instruction curr_inst = compute_inst(sensor0_reading, sensor1_reading, TEMP_TARGET, HUM_TARGET, TEMP_VARIANCE, HUM_VARIANCE); 
-        /* TODO: publish control instructions to PWR/APP CTRL*/
-
-        Serial << "^^xxxxx^^" << endl; 
-        Serial << curr_inst.heater_instruction << endl; 
-        Serial << curr_inst.humidifier_instruction << endl; 
-        
+        /* publish control instructions to PWR/APP CTRL*/
         mqtt_a.publish(control0_topic, curr_inst.heater_instruction); 
         mqtt_a.publish(control1_topic, curr_inst.humidifier_instruction); 
+        
+        /* publish FAKE sensor data to RPI */ 
+        //mqtt_a.publish(sensor0_topic, String(sensor0_reading));
+        //mqtt_a.publish(sensor1_topic, String(sensor1_reading));
         
     }
 }
