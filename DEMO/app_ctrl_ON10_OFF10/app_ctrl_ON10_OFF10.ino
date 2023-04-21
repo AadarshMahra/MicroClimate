@@ -10,25 +10,26 @@
 const char* ssid     = "MicroClimate";     // The SSID (name) of the Wi-Fi network you want to connect to
 const char* password = "MicroClimate";     // The password of the Wi-Fi network
 const char* BROKER = "192.168.1.119";      // static IP of broker host.
-const uint16_t BROKER_PORT = 1883;       
+const uint16_t BROKER_PORT = 1883;   
+bool flag = false;    
 // ^ ADD TO CONFIG ^
    
 // pins for I2C signals, different than ESP32 default
 // #define I2C_SDA 40
 // #define I2C_SCL 42
-#define I2C_SDA 23
-#define I2C_SCL 22
+// #define I2C_SDA 23
+// #define I2C_SCL 22
 
 
 // Sensor-set values
-float temp_f;
-float rh;
+// float temp_f;
+// float rh;
 
-int fail_init_flag;
+// int fail_init_flag;
 static MqttClient client;
 
-// Construct function. Chip address is 0x44
-DFRobot_SHT3x sht3x(&Wire,/*address=*/0x44,/*RST=*/4);
+// // Construct function. Chip address is 0x44
+// DFRobot_SHT3x sht3x(&Wire,/*address=*/0x44,/*RST=*/4);
 
 // sys status subscribe function
 void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
@@ -43,20 +44,20 @@ void setup() {
   Serial.begin(115200);
 
   // set pins for I2C reading of sensor
-  Wire.setPins(I2C_SDA, I2C_SCL);
+  // Wire.setPins(I2C_SDA, I2C_SCL);
   
   // begin sensor startup. set flag if fail
-  if (sht3x.begin() != 0) {
-    fail_init_flag = 0;
-  }
-  else {
-    fail_init_flag = 1;
-  }
+  // if (sht3x.begin() != 0) {
+  //   fail_init_flag = 0;
+  // }
+  // else {
+  //   fail_init_flag = 1;
+  // }
 
   // start periodic reading         
-  if(!sht3x.startPeriodicMode(sht3x.eMeasureFreq_1Hz)){
-    Serial.println("Failed to enter the periodic mode");
-  }
+  // if(!sht3x.startPeriodicMode(sht3x.eMeasureFreq_1Hz)){
+  //   Serial.println("Failed to enter the periodic mode");
+  // }
 
   // establish WiFi
   WiFi.mode(WIFI_STA);
@@ -70,8 +71,8 @@ void setup() {
   client.id("dataAcq0");
 	client.connect(BROKER, BROKER_PORT);
   client.setCallback(onPublishTopic);
-  client.subscribe("data_acq/node0/shutdown");
-  
+  client.subscribe("app_control/outlet0/status");
+  client.subscribe("app_control/outlet1/status");
 }
 
 void loop() {
@@ -81,16 +82,16 @@ void loop() {
    * getTemperatureF Get the measured temperature (in degrees Fahrenheit).
    * @return Return the float temperature data. 
    */
-  temp_f = sht3x.getTemperatureF();
-  Serial.print(temp_f);
-  Serial.println(" F ");
-  /**
-   * getHumidityRH Get measured humidity(%RH)
-   * @return Return the float humidity data
-   */
-  rh = sht3x.getHumidityRH();
-  Serial.print(rh);
-  Serial.println(" %RH");
+  // temp_f = sht3x.getTemperatureF();
+  // Serial.print(temp_f);
+  // Serial.println(" F ");
+  // /**
+  //  * getHumidityRH Get measured humidity(%RH)
+  //  * @return Return the float humidity data
+  //  */
+  // rh = sht3x.getHumidityRH();
+  // Serial.print(rh);
+  // Serial.println(" %RH");
 
 	// delay(1000);		please avoid usage of delay (see below how this done using next_send and millis())
 	static auto next_send = millis();
@@ -98,6 +99,7 @@ void loop() {
 	{
     //update every
 		next_send += UPDATE_INTERVAL;
+    flag = !flag;
     
     // reboot software if not connected to broker
 		if (not client.connected())
@@ -108,13 +110,17 @@ void loop() {
 		}
 
     // send sensor fail data to MQTT broker  
-    if (fail_init_flag != 1) {
-      client.publish("sensor/temperature", "sensor init fail");
+    // if (fail_init_flag != 1) {
+    //   client.publish("sensor/temperature", "sensor init fail");
+    // }
+    client.publish("app_control/outlet0/control", "Off");
+    // client.publish("app_control/outlet1/control", "off");
+    if (flag){
+      Serial << "--> Publishing ON to outlet 1" << endl;
+		  client.publish("app_control/outlet1/control", "On");
+    } else if (!flag){
+    Serial << "--> Publishing OFF to outlet 1" << endl;
+		client.publish("app_control/outlet1/control", "Off");
     }
-
-		Serial << "--> Publishing new values" << endl;
-		client.publish("data_acq/node0/temp", String(temp_f));
-    client.publish("data_acq/node0/rh", String(rh));
-
   }
 }
