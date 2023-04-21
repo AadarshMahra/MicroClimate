@@ -1,6 +1,6 @@
 import tkinter as tk
 import paho.mqtt.client as mqtt
-
+import datetime
 # definitions
 broker_address, broker_port = "192.168.1.119", 1883
 
@@ -20,7 +20,12 @@ current_temp, current_humidity = 0.0,0.0
     
 
 def on_message(client, userdata, message):
-    print("Received message on topic {}: {}".format(message.topic, str(message.payload)))
+    # Get the current time
+    now = datetime.datetime.now()
+
+    # Convert the current time to a string in the desired format
+    time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    print("[{}]: Received message on topic {}: {}".format(time_str,message.topic, str(message.payload)))
     if message.topic == sensor_data_topics[0]:
         current_temp = message.payload
         current_temp_label.config(text="Current Temperature: {}°F".format(float(current_temp)))
@@ -38,13 +43,24 @@ def on_message(client, userdata, message):
         humidifier1_status_label.config(text="Humidifier 1 Status: " + humidifier1_status)
         
 def update_temperature_target_to_mc():
+    # Get the current time
+    now = datetime.datetime.now()
+
+    # Convert the current time to a string in the desired format
+    time_str = now.strftime("%Y-%m-%d %H:%M:%S")
     # create connection and publish inputs to topics
-    print("Changing Requested Temperature Target")
+    print("[{}]: Changing Requested Temperature Target".format(time_str))
     client.publish(RPI_topics[0], temp_target_entry.get())
     current_temp_target_label.config(text="Current Temperature Target: " + temp_target_entry.get())
     
 def update_humidity_target_to_mc():
-    print("Changing Requested Humidity Target")
+    # Get the current time
+    now = datetime.datetime.now()
+
+    # Convert the current time to a string in the desired format
+    time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    # create connection and publish inputs to topics
+    print("[{}]: Changing Requested Humidity Target".format(time_str))
     client.publish(RPI_topics[1], humidity_target_entry.get())
     current_humidity_target_label.config(text="Current Humidity Target: " + humidity_target_entry.get())
   # Create the tkinter window
