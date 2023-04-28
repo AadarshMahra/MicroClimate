@@ -17,11 +17,19 @@ app_ctrl_status_topics = ["app_control/outlet0/status",
 
 current_temp, current_humidity = 0.0,0.0
 
-    
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        print("Unexpected disconnection.")
+    while (not client.is_connected()):
+        print("attempting reconnect...")
+        client.disconnect()
+        client.reinitialise()
 
 def on_message(client, userdata, message):
     # Get the current time
     now = datetime.datetime.now()
+
+    
 
     # Convert the current time to a string in the desired format
     time_str = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -29,6 +37,7 @@ def on_message(client, userdata, message):
     if message.topic == sensor_data_topics[0]:
         current_temp = message.payload
         current_temp_label.config(text="Current Temperature: {}°F".format(float(current_temp)))
+        client.publish("gui_ack", str(now))
             
     elif message.topic == sensor_data_topics[1]:
         current_humidity = message.payload
@@ -120,6 +129,7 @@ exit_button.pack()
 # declare an MQTT client 
 client = mqtt.Client(client_id="RPI")
 client.on_message = on_message
+client.on_disconnect = on_disconnect
 
  # create connection and subscribe to topics
 try: 
@@ -132,6 +142,7 @@ client.subscribe(sensor_data_topics[1])
 client.subscribe(app_ctrl_status_topics[0])
 client.subscribe(app_ctrl_status_topics[1])
 client.loop_start()
+
 
 master.mainloop()
 # ghp_Pjd9n5OGhQAtxUqsMC0LwcUYezIha3uAPPS

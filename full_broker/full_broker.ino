@@ -1,58 +1,8 @@
-#include "TinyMqtt.h"       // https://github.com/hsaturn/TinyMqtt
-#include "TinyStreaming.h"  // https://github.com/hsaturn/TinyConsole
-
-#include <WiFi.h>
+#include "config.h" 
 #include "Instruction.h"
 
-#define PORT 1883
-
-#define TEMP_VARIANCE 1
-#define HUM_VARIANCE 3
-MqttBroker broker(PORT);
-
-const char* ssid = "MicroClimate";
-const char* password = "MicroClimate";
-IPAddress local_IP(192, 168, 1, 119);
-IPAddress gateway(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
-
-uint16_t httpPort = 80;
-WiFiServer server(httpPort);
-WiFiClient httpClient;
-MqttClient mqtt_a(&broker);
-char* sensor0_topic = "data_acq/node0/temp";
-char* sensor1_topic = "data_acq/node0/rh";
-char* control0_topic = "app_control/outlet0/control"; 
-char* control1_topic = "app_control/outlet1/control"; 
-char* RPI_temp_topic = "RPI/targets/temp";
-char* RPI_rh_topic = "RPI/targets/rh";
-
-volatile float TEMP_TARGET = 0.0;
-volatile float HUM_TARGET = 0.0;
-volatile float sensor0_reading = 90.0;  
-volatile float sensor1_reading = 90.0;
-volatile float change = .5;
-void onPublishTopic(const MqttClient* /* srce */, const Topic& topic, const char* payload, size_t /* length */) {
-  const char* topic_str = topic.c_str();
-  Serial << "~~~~~~~~~~~> Client received msg on topic " << topic_str << ", " << payload << endl;
-  //Change to case?
-  if (strcmp(topic_str, sensor0_topic) == 0)
-    {
-      sensor0_reading = atof(payload); 
-    }
-   if (strcmp(topic_str, sensor1_topic) == 0)
-    {
-      sensor1_reading = atof(payload); 
-    }
-   if (strcmp(topic_str, RPI_temp_topic) == 0)
-   {
-    TEMP_TARGET = atof(payload);
-   }
-   if (strcmp(topic_str, RPI_rh_topic) == 0)
-   {
-    HUM_TARGET = atof(payload);
-   }
-}
+#define TEMP_VARIANCE 1.5
+#define HUM_VARIANCE 2
 
 void setup() {
   Serial.begin(115200);
@@ -71,7 +21,7 @@ void setup() {
   server.begin();
   Serial.println("http server started");
 
-
+  /* Start MQTT broker */ 
   broker.begin();
   Console << "Broker ready : " << WiFi.localIP() << " on port " << PORT << endl;
 
@@ -104,9 +54,24 @@ void loop() {
         //Serial << "~~~~~~~~~~~> Publishing a data_acq/node0/shutdown value: " << endl;
         //mqtt_a.publish("data_acq/node0/shutdown", "no");
         //mqtt_a.publish("data_acq/node0/shutdown", "no 2");
-
-        Serial << sensor0_reading << endl; 
-        Serial << sensor1_reading << endl; 
+        
+        /* compute control systems algorithm */
+        Serial << sensor0_reading << endl;
+        Serial << sensor1_reading << endl;
+        Serial << TEMP_TARGET << endl;
+        Serial << HUM_TARGET << endl;
+        Serial << TEMP_VARIANCE << endl;
+        Serial << HUM_VARIANCE << endl;
+        instruction curr_inst = compute_inst(sensor0_reading, sensor1_reading, TEMP_TARGET, HUM_TARGET, TEMP_VARIANCE, HUM_VARIANCE); 
+        Serial << "HEAT " << curr_inst.heater_instruction << endl;
+        Serial << "HUMI " << curr_inst.humidifier_instruction << endl;
+        /* publish control instructions to PWR/APP CTRL*/
+        mqtt_a.publish(control0_topic, curr_inst.heater_instruction); 
+        mqtt_a.publish(control1_topic, curr_inst.humidifier_instruction); 
+        
+        /* publish FAKE sensor data to RPI */ 
+        //Serial << sensor0_reading << endl; 
+        //Serial << sensor1_reading << endl; 
         /* fake sensor data */ 
         /*
         sensor0_reading += change;
@@ -114,16 +79,8 @@ void loop() {
         if(sensor0_reading == 100.0 || sensor1_reading == 100.0 || sensor0_reading == 90.0 || sensor1_reading == 90.0)
           change = change * -1;
         */ 
-        
-        /* compute control systems algorithm */
-        instruction curr_inst = compute_inst(sensor0_reading, sensor1_reading, TEMP_TARGET, HUM_TARGET, TEMP_VARIANCE, HUM_VARIANCE); 
-        /* publish control instructions to PWR/APP CTRL*/
-        mqtt_a.publish(control0_topic, curr_inst.heater_instruction); 
-        mqtt_a.publish(control1_topic, curr_inst.humidifier_instruction); 
-        
-        /* publish FAKE sensor data to RPI */ 
-        //mqtt_a.publish(sensor0_topic, String(sensor0_reading));
-        //mqtt_a.publish(sensor1_topic, String(sensor1_reading));
+        //mqtt_a.publish(control0_topic, "On");
+        //mqtt_a.publish(control1_topic, "On");
         
     }
 }
